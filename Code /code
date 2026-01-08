@@ -1,0 +1,90 @@
+pip install tensorflow pandas numpy scikit-learn matplotlib seaborn
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.optimizers import Adam
+
+data = pd.read_csv("customer_data.csv")
+
+print("Dataset Shape:", data.shape)
+print(data.head())
+
+# Drop non-numeric columns (e.g., CustomerID)
+data_cleaned = data.select_dtypes(include=["int64", "float64"])
+
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(data_cleaned)
+
+input_dim = scaled_data.shape[1]
+encoding_dim = 8  # compressed representation
+
+input_layer = Input(shape=(input_dim,))
+encoded = Dense(16, activation='relu')(input_layer)
+encoded = Dense(encoding_dim, activation='relu')(encoded)
+
+decoded = Dense(16, activation='relu')(encoded)
+decoded = Dense(input_dim, activation='linear')(decoded)
+
+autoencoder = Model(inputs=input_layer, outputs=decoded)
+encoder = Model(inputs=input_layer, outputs=encoded)
+
+autoencoder.compile(
+    optimizer=Adam(learning_rate=0.001),
+    loss='mse'
+)
+
+autoencoder.summary()
+
+history = autoencoder.fit(
+    scaled_data,
+    scaled_data,
+    epochs=50,
+    batch_size=32,
+    shuffle=True,
+    validation_split=0.1,
+    verbose=1
+)
+
+encoded_features = encoder.predict(scaled_data)
+print("Encoded Feature Shape:", encoded_features.shape)
+
+kmeans = KMeans(n_clusters=4, random_state=42)
+clusters = kmeans.fit_predict(encoded_features)
+
+data["Customer_Segment"] = clusters
+
+pca = PCA(n_components=2)
+reduced_features = pca.fit_transform(encoded_features)
+
+plt.figure(figsize=(8,6))
+sns.scatterplot(
+    x=reduced_features[:,0],
+    y=reduced_features[:,1],
+    hue=data["Customer_Segment"],
+    palette="Set2"
+)
+
+plt.title("Customer Segmentation using Deep Learning")
+plt.xlabel("PCA Component 1")
+plt.ylabel("PCA Component 2")
+plt.legend(title="Segment")
+plt.show()
+
+segment_summary = data.groupby("Customer_Segment").mean()
+print(segment_summary)
+
+autoencoder.save("customer_autoencoder.h5")
+encoder.save("customer_encoder.h5")
+
+data.to_csv("segmented_customers.csv", index=False)
+print("Models and segmented data saved successfully!")
+
