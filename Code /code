@@ -1,4 +1,4 @@
-pip install tensorflow pandas numpy scikit-learn matplotlib seaborn
+!pip install tensorflow pandas numpy scikit-learn matplotlib seaborn
 
 import pandas as pd
 import numpy as np
