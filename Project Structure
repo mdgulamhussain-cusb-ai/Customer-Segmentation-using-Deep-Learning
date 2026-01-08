@@ -1,0 +1,29 @@
+customer-segmentation-deep-learning/
+│
+├── data/
+│   ├── raw/
+│   │   └── customer_data.csv
+│   └── processed/
+│       └── segmented_customers.csv
+│
+├── notebooks/
+│   └── eda_customer_segmentation.ipynb
+│
+├── models/
+│   ├── customer_autoencoder.h5
+│   └── customer_encoder.h5
+│
+├── src/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── data_loader.py
+│   ├── preprocessing.py
+│   ├── autoencoder.py
+│   ├── clustering.py
+│   ├── visualization.py
+│   └── train.py
+│
+├── main.py
+├── requirements.txt
+├── README.md
+└── .gitignore
