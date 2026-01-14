@@ -54,4 +54,110 @@ def build_autoencoder(input_dim, encoding_dim):
     
     return autoencoder, encoder
 
+#src/clustering.py
+from sklearn.cluster import KMeans
+
+def perform_clustering(encoded_features, n_clusters, random_state):
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state)
+    return kmeans.fit_predict(encoded_features)
+
+#src/visualization.py
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.decomposition import PCA
+
+def plot_segments(encoded_features, clusters):
+    pca = PCA(n_components=2)
+    reduced = pca.fit_transform(encoded_features)
+
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(
+        x=reduced[:,0],
+        y=reduced[:,1],
+        hue=clusters,
+        palette="Set2"
+    )
+
+    plt.title("Customer Segmentation using Deep Learning")
+    plt.xlabel("PCA Component 1")
+    plt.ylabel("PCA Component 2")
+    plt.legend(title="Segment")
+    plt.show()
+
+#src/train.py
+def train_autoencoder(model, data, epochs, batch_size):
+    history = model.fit(
+        data,
+        data,
+        epochs=epochs,
+        batch_size=batch_size,
+        shuffle=True,
+        validation_split=0.1,
+        verbose=1
+    )
+    return history
+
+#main.py
+import pandas as pd
+from src.data_loader import load_data
+from src.preprocessing import preprocess_data
+from src.autoencoder import build_autoencoder
+from src.clustering import perform_clustering
+from src.visualization import plot_segments
+from src.train import train_autoencoder
+from src.config import *
+
+# Load data
+data = load_data()
+
+# Preprocess
+numeric_data, scaled_data = preprocess_data(data)
+
+# Build model
+autoencoder, encoder = build_autoencoder(
+    input_dim=scaled_data.shape[1],
+    encoding_dim=ENCODING_DIM
+)
+
+# Train model
+train_autoencoder(autoencoder, scaled_data, EPOCHS, BATCH_SIZE)
+
+# Encode features
+encoded_features = encoder.predict(scaled_data)
+
+# Clustering
+clusters = perform_clustering(encoded_features, N_CLUSTERS, RANDOM_STATE)
+
+# Save results
+data["Customer_Segment"] = clusters
+data.to_csv(PROCESSED_DATA_PATH, index=False)
+
+# Save models
+autoencoder.save("models/customer_autoencoder.h5")
+encoder.save("models/customer_encoder.h5")
+
+# Visualization
+plot_segments(encoded_features, clusters)
+
+print("Customer segmentation completed successfully!")
+
+#requirements.txt
+tensorflow
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+
+
+#.gitignore
+__pycache__/
+*.h5
+*.csv
+.ipynb_checkpoints/
+.env
+
+
+
+
 
